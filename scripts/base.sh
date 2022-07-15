@@ -2,7 +2,8 @@
 set -x
 sed -i "s/^.*requiretty/#Defaults requiretty/" /etc/sudoers
 echo "export KUBECONFIG=/etc/kubernetes/admin.conf" >> /root/.bashrc
-echo "export KUBECONFIG=/etc/kubernetes/admin.conf" >> /home/healthbot/.bashrc
+echo "alias k9s='docker run --rm -it -v $KUBECONFIG:/root/.kube/config quay.io/derailed/k9s'" >> /root/.bashrc
+
 yum -y update
 yum -y install epel-release yum-utils wget fuse-libs open-vm-tools
 setenforce 0
