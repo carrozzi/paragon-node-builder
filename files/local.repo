@@ -1,0 +1,6 @@
+[LocalRepo]
+name=LocalRepository
+baseurl=file:///cdrom
+enabled=1
+gpgcheck=0
+
