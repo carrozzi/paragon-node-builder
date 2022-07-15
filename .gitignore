@@ -4,5 +4,5 @@ packer_cache/
 # Crash log
 crash.log
 
-# For built boxes
-*.box
+# For output directories
+output*
