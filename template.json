@@ -50,7 +50,7 @@
       "execute_command": "sudo -S sh '{{.Path}}'",
       "scripts": [
             "scripts/base.sh",
-            "scripts/hgfs.sh",
+            "scripts/vmware.sh",
             "scripts/zerodisk.sh"
           ]
     }
