@@ -1,5 +1,5 @@
-# Healthbot-ova-builder
-   The Healthbot OVA is built using Hashicorp Packer with the VMware ISO builder.  I used vmware Fusion in the build process but it should work in Workstation without changes and ESXi with some modification.  
+# paragon-node-builder
+   The paragon node OVA is built using Hashicorp Packer with the VMware ISO builder.  I used vmware Fusion in the build process but it should work in Workstation without changes and ESXi with some modification.  
    I went with a desktop product as I found it easier to compact the image size down after building.
 
    ## Prerequisites
