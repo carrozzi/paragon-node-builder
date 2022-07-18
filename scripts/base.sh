@@ -19,8 +19,6 @@ yum -y --enablerepo=elrepo-kernel install kernel-lt
 sed -i "s/GRUB_DEFAULT=saved/GRUB_DEFAULT=0/" /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 bash -c "$(curl -sL https://get-gnmic.kmrd.dev)"
-mv /tmp/k9s /usr/local/bin
-chmod 755 /usr/local/bin/k9s
 mkdir /cdrom
 mv /tmp/repodata /cdrom/
 cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -33,11 +31,13 @@ repo_gpgcheck=0
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
 yum install -y kubectl-1.21.2-0.x86_64 kubelet-1.21.2-0.x86_64 kubeadm-1.21.2-0.x86_64
+docker pull quay.io/derailed/k9s
 wget https://get.helm.sh/helm-v3.4.0-linux-amd64.tar.gz -O /tmp/helm.tgz
 mkdir /usr/local/bin/helm-v3.4.0
 tar zxf /tmp/helm.tgz -C /usr/local/bin/helm-v3.4.0
 ln -s /usr/local/bin/helm-v3.4.0/linux-amd64/helm /usr/local/bin/helm
 mv /etc/yum.repos.d/*.repo /tmp
 mv /tmp/local.repo /etc/yum.repos.d
-
+echo docker_version: \'$(yum list docker-ce --showduplicates -q| awk '/docker/{print $2}'| sed 's/.*:\(.*\)\.el7/\1/')\' >> /tmp/config.txt
+echo containerd_version_redhat: \'$(yum list containerd.io --showduplicates -q| awk '/container/{print $2}'| sed 's/\(.*\)\.el7/\1/')\' >> /tmp/config.txt
 
