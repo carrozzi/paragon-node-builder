@@ -3,10 +3,10 @@
     "vm_name": "pa-node",
     "iso_url": "http://mirror.clarkson.edu/centos/7.9.2009/isos/x86_64/CentOS-7-x86_64-Minimal-2009.iso",
     "iso_sha256": "07b94e6b1a0b0260b94c83d6bb76b26bf7a310dc78d7a9c7432809fb9bc6194a",
-    "esxi_host": "***REMOVED***",
+    "esxi_host": "X.X.X.X",
     "esxi_datastore": "5ff342a5-ba8e9f0e-5aa9-0002c9edc280",
     "esxi_username": "root",
-    "esxi_password": "***REMOVED***"
+    "esxi_password": "PASSWORD"
 
   },
   "builders": [
@@ -42,7 +42,7 @@
       "iso_url": "{{user `iso_url`}}",
       "iso_checksum": "{{user `iso_sha256`}}",
       "ssh_username": "root",
-      "ssh_password": "Healthbot1",
+      "ssh_password": "Paragon1",
       "ssh_port": 22,
       "ssh_wait_timeout": "10000s",
       "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; sudo -S sh '/tmp/shutdown.sh'",
@@ -64,7 +64,6 @@
       "execute_command": "sudo -S sh '{{.Path}}'",
       "scripts": [
             "scripts/base.sh",
-            "scripts/hgfs.sh",
             "scripts/cleanup.sh",
             "scripts/zerodisk.sh"
           ]
