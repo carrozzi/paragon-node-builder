@@ -28,4 +28,4 @@
     1) The VMs have to have a default route set. Ansible determines the primary network interface by looking for the default route.
     2) There has to be a NTP server on the network.  The installation will fail if the VM is not showing NTP sync.
     3) For Docker and containerd, the builder installs the current version at build time. As this is not the version the installer is expecting, you need to tell the installer what version you have.  The file /tmp/config.txt is created during build with the proper settings. When going through the install process, after you have done ```run -c ... conf``` or edited the config.yml directly, but before deploying to the cluster, add the two lines in config.txt to the end of your config.yml.
-    4) When deploying, make sure to add -e offline_mode=true to the end of the command(mentioned in the documentation for RHEL 8.4 offline install)
+    4) When deploying, make sure to add -e offline_install=true to the end of the command(mentioned in the documentation for RHEL 8.4 offline install)
