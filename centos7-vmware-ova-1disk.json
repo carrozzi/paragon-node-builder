@@ -11,7 +11,7 @@
       "headless": false,
       "type": "vmware-iso",
       "boot_command": [
-        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks-singledisk.cfg<enter><wait>"
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks-c7-1disk.cfg<enter><wait>"
       ],
       "boot_wait": "10s",
       "vnc_disable_password": "true",
@@ -48,7 +48,7 @@
       "timeout": "1h",
       "execute_command": "sudo -S sh '{{.Path}}'",
       "scripts": [
-            "scripts/base.sh",
+            "scripts/centos7.sh",
             "scripts/vmware.sh",
             "scripts/zerodisk.sh"
           ]
