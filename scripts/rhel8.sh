@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -x
-subscription-manager register --username=***REMOVED*** --password=***REMOVED*** --auto-attach
+subscription-manager register --username=-USERNAME-password=PASSWORD --auto-attach
 echo "vm.max_map_count=262144" >> /etc/sysctl.conf
 echo "net.bridge.bridge-nf-call-iptables=1" >> /etc/sysctl.conf
 echo "export KUBECONFIG=/etc/kubernetes/admin.conf" >> /root/.bashrc
