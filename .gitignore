@@ -6,3 +6,5 @@ crash.log
 
 # For output directories
 output*
+# iso images
+iso/
