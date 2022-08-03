@@ -1,0 +1,58 @@
+{
+  "variables": {
+    "vm_name": "pa-node-rhel8",
+    "iso_url": "iso/rhel-8.4-x86_64-dvd.iso",
+    "iso_sha256": "48f955712454c32718dcde858dea5aca574376a1d7a4b0ed6908ac0b85597811"
+
+  },
+  "builders": [
+    {
+      "name": "pa-node-rhel8",
+      "headless": false,
+      "type": "vmware-iso",
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks-r8-2disk.cfg<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "vnc_disable_password": "true",
+      "disk_size": 300000,
+      "disk_additional_size": 50000,
+      "format": "ova",
+
+
+      "ovftool_options": ["--shaAlgorithm=SHA1","--eula@=eula.txt"],
+      "http_directory": "http",
+      "network": "nat",
+      "guest_os_type": "centos7-64",
+      "version": 11,
+      "memory": 32768,
+      "cpus": 8,
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_sha256`}}",
+      "ssh_username": "root",
+      "ssh_password": "Paragon1",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; sudo -S sh '/tmp/shutdown.sh'",
+      "shutdown_timeout": "10m"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "./files/",
+      "timeout": "1h",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "timeout": "1h",
+      "execute_command": "sudo -S sh '{{.Path}}'",
+      "scripts": [
+            "scripts/rhel8.sh",
+            "scripts/zerodisk.sh"
+          ]
+    }
+  ]
+}
+
