@@ -1,0 +1,68 @@
+{
+  "variables": {
+    "vm_version": "23.1",
+    "iso_url": "iso/rhel-8.4-x86_64-dvd.iso",
+    "iso_sha256": "48f955712454c32718dcde858dea5aca574376a1d7a4b0ed6908ac0b85597811",
+    "vm_description": "Juniper Paragon Automation 23.1 OVA for offline installation"
+  },
+  "builders": [
+    {
+      "name": "pavb-rhel8-node",
+      "vm_name": "pavb-rhel8-node",
+      "type": "virtualbox-iso",
+      "headless": true,
+      "vrdp_bind_address": "0.0.0.0",
+      "http_bind_address": "0.0.0.0",
+      "boot_command": [
+        "<tab> text ks=http://10.192.16.64:{{ .HTTPPort }}/ks-r8-2disk.cfg<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "export_opts":
+        [
+          "--manifest",
+          "--vsys", "0",
+          "--description", "{{user `vm_description`}}",
+          "--version", "{{user `vm_version`}}"
+        ],
+
+      "disk_size": 350000,
+      "disk_additional_size": 50000,
+      "guest_os_type": "RedHat_64",
+      "format": "ova",
+      "vboxmanage": [
+         [ "modifyvm", "{{.Name}}", "--nic1", "bridged", "--bridge-adapter1","br0" ]
+      ],
+      "http_directory": "http",
+      "memory": 65536,
+      "cpus": 16,
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_sha256`}}",
+      "ssh_username": "root",
+      "ssh_password": "Paragon1",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "ssh_read_write_timeout": "10000s",
+      "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; sudo -S sh '/tmp/shutdown.sh'",
+      "shutdown_timeout": "10m"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "./files/",
+      "timeout": "1h",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "timeout": "2h",
+      "execute_command": "sudo -S sh '{{.Path}}'",
+      "expect_disconnect": true,
+      "scripts": [
+            "scripts/rhel8-airgap.sh"
+          ]
+
+    }
+  ]
+}
+

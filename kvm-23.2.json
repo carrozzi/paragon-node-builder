@@ -1,20 +1,23 @@
 {
   "variables": {
-    "iso_url": "http://mirror.clarkson.edu/centos/7.9.2009/isos/x86_64/CentOS-7-x86_64-Minimal-2009.iso",
-    "iso_sha256": "07b94e6b1a0b0260b94c83d6bb76b26bf7a310dc78d7a9c7432809fb9bc6194a"
+    "iso_url": "iso/rhel-8.4-x86_64-dvd.iso",
+    "iso_sha256": "48f955712454c32718dcde858dea5aca574376a1d7a4b0ed6908ac0b85597811"
+
   },
   "builders": [
     {
-      "name": "pa-node-centos7-qemu",
-      "vm_name": "pa-node-centos7.qcow2",
+      "name": "pa-node-rhel8-qemu",
+      "vm_name": "pa-node-rhel8.qcow2",
       "headless": true,
       "type": "qemu",
+      "accelerator": "kvm",
       "vnc_bind_address": "0.0.0.0",
       "boot_command": [
-        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks-c7-kvm-1disk.cfg<enter><wait>"
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks-r8-2disk.cfg<enter><wait>"
       ],
       "boot_wait": "10s",
-      "disk_size": "350G",
+      "disk_size": "300G",
+      "disk_additional_size": "50G",
       "format": "qcow2",
       "disk_compression": true,
       "http_directory": "http",
@@ -42,8 +45,7 @@
       "timeout": "2h",
       "execute_command": "sudo -S sh '{{.Path}}'",
       "scripts": [
-            "scripts/centos7.sh",
-            "scripts/cleanup.sh"
+            "scripts/23.2airgap.sh"
           ]
     }
   ]

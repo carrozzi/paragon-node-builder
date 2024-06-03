@@ -1,0 +1,90 @@
+{
+  "variables": {
+    "vm_name": "pa-node-centos7",
+    "iso_url": "http://mirror.clarkson.edu/centos/7.9.2009/isos/x86_64/CentOS-7-x86_64-Minimal-2009.iso",
+    "iso_sha256": "07b94e6b1a0b0260b94c83d6bb76b26bf7a310dc78d7a9c7432809fb9bc6194a"
+
+  },
+  "builders": [
+    {
+      "name": "pa-centos7-node",
+      "vm_name": "pa-centos7-node",
+      "type": "vsphere-iso",
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks-c7-2disk.cfg<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "storage": [
+        {
+          "disk_size": 350000,
+          "disk_thin_provisioned": true
+        },
+        {
+          "disk_size": 50000,
+          "disk_thin_provisioned": true
+        }
+      ],
+      "guest_os_type": "centos7_64Guest",
+      "datastore": "{{ user `vcenter_ip`}}",
+      "insecure_connection": true,
+      "http_ip": "10.192.16.64", 
+      "ip_wait_address": "10.192.16.0/23",
+      "network_adapters": [
+        {
+	  "network": "VM Network",
+          "network_card": "vmxnet3"
+        }
+      ],
+      "http_directory": "http",
+      "RAM": 65536,
+      "CPUs": 16,
+      "RAM_reserve_all": true,
+      "vcenter_server": "{{ user `vcenter_ip`}}",
+      "username": "{{ user `vcenter_ip`}}",
+      "password": "{{ user `vcenter_ip`}},
+      "host": "{{ user `vcenter_ip`}}", 
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_sha256`}}",
+      "ssh_username": "root",
+      "ssh_password": "Paragon1",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "ssh_read_write_timeout": "10000s",
+      "export": {
+        "force": true,
+        "output_directory": "./output_vsphere"
+      },
+      "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; sudo -S sh '/tmp/shutdown.sh'",
+      "shutdown_timeout": "10m"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "./files/",
+      "timeout": "1h",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "timeout": "2h",
+      "execute_command": "sudo -S sh '{{.Path}}'",
+      "expect_disconnect": true,
+      "pause_after": "60s",
+      "scripts": [
+            "scripts/centos7.sh"
+          ]
+
+    },
+    {
+      "type": "shell",
+      "timeout": "2h",
+      "execute_command": "sudo -S sh '{{.Path}}'",
+      "expect_disconnect": true,
+      "scripts": [
+            "scripts/install_paragon.sh"
+          ]
+    }
+  ]
+}
+

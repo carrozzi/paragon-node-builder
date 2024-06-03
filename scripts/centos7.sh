@@ -3,6 +3,9 @@ set -x
 sed -i "s/^.*requiretty/#Defaults requiretty/" /etc/sudoers
 echo "export KUBECONFIG=/etc/kubernetes/admin.conf" >> /root/.bashrc
 echo "alias k9s='docker run --rm -it -v /etc/kubernetes/admin.conf:/root/.kube/config quay.io/derailed/k9s'" >> /root/.bashrc
+rm /etc/sysconfig/network-scripts/ifcfg-ens*
+cp /tmp/ifcfg* /etc/sysconfig/network-scripts
+systemctl restart network
 yum -y update
 yum -y install epel-release yum-utils wget fuse-libs open-vm-tools
 setenforce 0
@@ -39,4 +42,16 @@ mv /etc/yum.repos.d/*.repo /tmp
 mv /tmp/local.repo /etc/yum.repos.d
 echo docker_version: \'$(yum list docker-ce --showduplicates -q| awk '/docker/{print $2}'| sed 's/.*:\(.*\)\.el7/\1/')\' >> /tmp/config.txt
 echo containerd_version_redhat: \'$(yum list containerd.io --showduplicates -q| awk '/container/{print $2}'| sed 's/\(.*\)\.el7/\1/')\' >> /tmp/config.txt
+cd /tmp
+tar xvf Paragon22.1.tar.gz
+tar xvf Paragon_22.1_SP2.tar.gz
+rm *.tar.gz
+cd Paragon22.1
+chmod 755 run
+./run -c lab init
+cp ../config.yml lab
+cp ../inventory lab
+cat ../config.txt >> lab/config.yml
+
+
 

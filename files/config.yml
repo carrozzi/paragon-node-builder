@@ -5,8 +5,17 @@
 #   kubernetes cluster, CNI, common services
 install_infra: true
 
+# Install applications addons:
+install_addons: true
+
 # Install Pathfinder product
 install_northstar: true
+
+# Install Pathfinder netflowd (optional)
+install_netflowd: true
+
+# Install Paragon UI
+install_paragon_ui: true
 
 # Install Insights product
 install_healthbot: true
@@ -15,7 +24,7 @@ install_healthbot: true
 install_ems: true
 
 # Install Foghorn product
-install_foghorn: true
+install_foghorn: false
 
 # Main infra subcomponents
 install_kubernetes: true
@@ -26,6 +35,9 @@ install_chrony: true
 # loadbalancer for multi-master
 install_loadbalancer: true
 
+# NGINX Ingress Controller (used for Pathfinder services, such as netflowd and pceserver)
+install_nginx_ingress: true
+
 #####################################################################
 # Required configuration values
 #
@@ -35,10 +47,15 @@ kubernetes_master_address:
 
 # Configure ethernet interface for cluster internal communication
 # Defaults to default-ipv4 interface (i.e. target of default route)
-kubernetes_system_interface: '{{ ansible_default_ipv4.interface }}'
+kubernetes_system_interface: '{{ default_interface }}'
 
 # Configure ethernet interface for multi-master loadbalancer (keepalived)
 lb_interface: '{{ kubernetes_system_interface }}'
+
+# Configure support for IPv4 networking
+cluster_ipv4_enabled: true
+# Configure support for IPv6 networking
+cluster_ipv6_enabled: false
 
 # Optionally allow scheduling of application workloads on master node
 allow_master_scheduling: true
@@ -55,7 +72,7 @@ allow_master_scheduling: true
 #  - 10.0.0.1-10.0.0.20
 #  - 10.0.0.192/26
 metallb_addresses:
-  - 100.123.35.191-100.123.35.195
+  - 192.168.70.200-192.168.70.202
 
 # alternatively, specify complete metallb_config, e.g.
 # metallb_config:
@@ -70,26 +87,33 @@ metallb_addresses:
 #         - 10.0.0.0/24
 # see https://metallb.universe.tf/configuration/
 
+# Ports to be checked on system if they are open or not
+port_list: 8080 6443 2379 2380 179 10250 8443 7005 80 443 7804 7000 4189 67 514 1114 4000 162
+
 # NTP configuration, configure reachable NTP servers
 chrony_config_server:
-  - 0.pool.ntp.org
-  - anyntp.juniper.net
-  - 1.pool.ntp.org
+  - 192.168.70.50
 
 # Ingress Controller
 # service type and LoadBalancer settings
 ingress_service_type: LoadBalancer
 ingress_service_annotations: {}
+# ingress service config to preserve source ip. Valid values are Cluster(default) or Local.
+ingress_external_traffic_policy: Local
 #  metallb.universe.tf/allow-shared-ip: default
 
-# Fixed IP address for Web interface. The address must be in a pool
+# Fixed IP addresses for Web interface. The addresses must be in a pool
 # managed by MetalLB.
 ingress_vip:
+  - 192.168.70.200
 
 # Fixed IP address for device callback. This must be one of the addresses
 # assigned to the ingress controller
-  - 100.123.35.191
-callback_vip: 100.123.35.191
+callback_vip: 192.168.70.200
+
+# Fixed IPv6 address for device callback. This must be one of the addresses
+# assigned to the ingress controller
+callback_vip6: ''
 
 # Hostname for accessing kibana (system log files).
 # The hostname must resolve to ingress_vip
@@ -99,27 +123,33 @@ kibana_ingress_hosts: []
 
 #####################################################################
 # Pathfinder application configuration
+northstar_image_pull_policy: IfNotPresent
 #
 # Hostname of Pathfinder web server, must resolve to ingress_vip
-northstar_web_hostname: 100.123.35.191
+northstar_web_hostname: 192.168.70.200
 
 # Virtual IP address of PCEP server. The address must be in a pool managed
 # by MetalLB and must be different from ingress_vip
 # northstar_pceserver_vip: 10.0.0.2
-northstar_pceserver_vip: 100.123.35.194
+northstar_pceserver_vip: ''
 northstar_pceserver_replicas: 1
-northstar_pceserver_proxy: false
+northstar_pceserver_proxy: nginx
 
 # Virtual IP address of nginx-ingress-controller. The address must be in a pool managed
 # by MetalLB and must be different from ingress_vip
 # nginx_controller_vip: 10.0.0.2
-nginx_controller_vip: ''
+nginx_controller_vip: 192.168.70.201
 nginx_controller_replicas: 1
+nginx_service_annotations:
+  metallb.universe.tf/allow-shared-ip: nginx-ingress
 
 # northstar/netflowd
-# If netflowd needs to be accessible from outside the cluster, configure
-# northstar_netflowd_service_type: LoadBalancer
-# and configure virtual IP address in northstar_netflowd_vip
+# The netflowd service needs to be accessible from outside the cluster. This can be
+# accomplished by putting either nginx-ingress in-front of netflowd (default config), with
+# northstar_netflowd_proxy: true
+# or removing the northstar_netflowd_proxy line
+# and configuring the virtual IP address in northstar_netflowd_vip
+northstar_netflowd_proxy: true
 northstar_netflowd_service_type: ClusterIP
 northstar_netflowd_traffic_policy: Local
 northstar_netflowd_vip: ''
@@ -132,16 +162,25 @@ northstar_netflowd_replicas: 1
 northstar_pcviewer_service_type: ClusterIP
 northstar_pcviewer_vip: ''
 
+# northstar migration
+northstar_db_migration_directory: /var/local/ns_db_migration
+
 # CRPD (BPG-LS peer)
+# Use PVC
+crpd_use_pvc: '{{ install_rook }}'
+crpd_pvc_storageclass: rook-cephfs
+
 # Autonomous System number
-crpd_autonomous_system: '65200'
+crpd_autonomous_system: '64500'
 
 # List of BGP neighbors. The BGP neighbors need to be configured to allow
 # incoming connections from all nodes in the kubernetes cluster.
 # e.g.
 #crpd_neighbors:
 #  - 10.0.1.1
-crpd_neighbors: [ '10.52.100.3', '10.52.100.4' ]
+crpd_neighbors:
+  - 192.168.70.150
+  - 192.168.70.151
 
 # Default Web admin password
 northstar_web_admin_password: ''
@@ -153,26 +192,24 @@ install_northstar_debugutils: false
 northstar_license: |
   expire_date=6/7/2024
   usercount=5
+  viewercount=10
   node_limit=250
   card=micro_service
   MAC=FF:EE:DD:CC:BB:AA
   customer=MICRO_SERVICE
-  S-NS-PLNR-BSC=gWTqDmZKRnaQRVjARguWYW
-  S-NS-PLNR-PRM=TWRhUihDeZLWDYFXDbiaTj
-  S-NS-SDN-BSC=ZIVamtZDhiHQRVjARguWYW
-  S-NS-SDN-STD=LDYYjugBUpZLSBGTOimXQn
-  S-NS-SDN-PRM=gdPdcxcSjjXRYWYPDauiBD
+  S-NS-PLNR-BSC=gWTqDmZKRnaCLgHaVYncKg
+  S-NS-PLNR-PRM=TWRhUihDeZLjFDXAeMhhcY
+  S-NS-SDN-BSC=ZIVamtZDhiHCLgHaVYncKg
+  S-NS-SDN-STD=LDYYjugBUpZYXMIjSbqaRj
+  S-NS-SDN-PRM=gdPdcxcSjjXjFWJPTUmeYU
 
 #####################################################################
 # Insights application configuration
 #
-healthbot_vip: 100.123.35.192
+healthbot_vip: 192.168.70.202
 healthbot_service_annotations:
   metallb.universe.tf/allow-shared-ip: default
 
-healthbot_snmp_proxy_vip: 100.123.35.193
-
-# maximum time to wait for comonents to start up in minutes
 max_wait: 15
 
 #####################################################################
@@ -182,20 +219,23 @@ max_wait: 15
 # variables starting with "install_" select a subcomponent to install
 # other variables configure specific components
 # 
-# local_registry: localhost:5000/
+# local_registry: "{{ user_registry_name | default('localhost:5000/', true) }}"
 # boot_registry_image: localhost:5000/svl-artifactory.juniper.net/northstar-docker-local/registry:2.6.2
-# local_charts: /export/charts
+# local_charts: local
+# 
+# boot_registry_ready_delay: 5
+# boot_registry_ready_timeout: 30
+# boot_registry_ready_retries: 3
 # 
 # install_docker: true
+# install_registry: true
 # install_reloader: '{{ install_northstar or install_healthbot }}'
 # install_rbac: '{{ install_northstar or install_healthbot }}'
 # 
 # install_cassandra: false
 # install_fluentd: true
 # install_opendistro_es: true
-# install_elasticsearch: '{{ install_fluentd and not install_opendistro_es }}'
 # install_ambassador: true
-# install_kibana: '{{ install_fluentd and not install_opendistro_es }}'
 # install_postgres: '{{ install_healthbot or install_ems or install_northstar }}'
 # install_local_volumes: '{{ install_postgres or install_opendistro_es }}'
 # install_arangodb: "{{ install_foghorn }}"
@@ -210,30 +250,39 @@ max_wait: 15
 # install_keycloak_theme: false
 # 
 # install_dashboard: '{{ install_healthbot }}'
+# install_metrics_server: '{{ install_dashboard }}'
 # 
 # install_logcollector: '{{ not install_healthbot }}'
 # 
 # install_kafka: '{{ install_ems }}'
 # install_zookeeper: '{{ install_kafka }}'
 # 
-# install_storage: "{{ install_ems }}"
-# install_minio: "{{ install_ems or install_foghorn }}"
 # install_cert_manager: true
 # install_iam: "{{ install_ems or install_healthbot }}"
 # install_db_backup: '{{ install_healthbot or install_ems or install_northstar }}'
 # install_ambassador_auth_jwt: "{{ install_ambassador and install_iam }}"
-# install_nginx_ingress: false ## "{{ install_northstar and install_iam }}"
 # 
-install_rook: false
+# install_rook: true
 # rook_namespace: rook-ceph
 # discovery daemon detects dynamically added disks. Enable if required
 # rook_enable_discovery_daemon: false
 # rook_object_store_users:
 #   - ems-user
 # 
+# cephfs and object-store settings
+# size of metadata pool
+# ceph_metadata_pool_size: 3
+# use replicated or erasureCoded datapools
+# ceph_data_replicated: true
+# size of data pool
+# ceph_data_pool_size: 3
+# 
 # kubernetes_cluster_name: kubernetes
 # kubernetes_pod_cidr: 10.244.0.0/16
 # kubernetes_service_cidr: 10.96.0.0/12
+#
+# kubernetes_pod_cidr6: fd00:4000::/64
+# kubernetes_service_cidr6: fd00:4001::/112
 # kubernetes_repo: svl-artifactory.juniper.net/northstar-docker-local
 # 
 # kubelet_runtime_request_timeout: 5m0s
@@ -245,6 +294,35 @@ install_rook: false
 #           disabled:
 #             - name: ImageLocality
 # 
+# kubelet_apiserver_tls_cipher_suites:
+#   - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+#   - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+#   - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+#   - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+# 
+# defaults file for kubelet-config
+# kubelet_runtime_request_timeout: 5m0s
+# kubelet_pod_eviction_timeout: 30s
+# kubelet_terminated_pod_gc_threshold: 10
+# kubelet_node_monitor_grace_period: 20s
+# kubelet_node_monitor_period: 4s
+# kubelet_node_cidr_mask_size: 24
+# kubelet_node_cidr6_mask_size: 64
+# 110 is kubernetes default
+# kubelet_max_pods: "{% if worker_nodes|int == 1 %}512{% else %}110{% endif %}"
+# 0 value disables podsPerCore limit
+# kubelet_pods_per_core: 0
+# kubelet_event_record_qps: 0
+# 
+# kubeapi_anonymous_auth: 'false'
+# kubeapi_enable_admission_plugins: NodeRestriction  # ,PodSecurityPolicy
+# kubeapi_kubelet_certificate_authority: '/etc/kubernetes/pki/ca.crt'
+# kubeapi_audit_log_path: /var/log/apiserver
+# kubeapi_audit_log_maxage: 30
+# kubeapi_audit_log_maxbackup: 10
+# kubeapi_audit_log_maxsize: 100
+# kubeapi_request_timeout: 300s
+# kubeapi_profiling: 'false'
 # 
 # defaults file for kubectl-config
 # kubectl_file_name: 'admin.conf'
@@ -255,7 +333,8 @@ install_rook: false
 # containerd_version_debian: '1.4.6-1'
 # containerd_version_redhat: '1.4.6-3.1'
 # docker_storage_driver: overlay2
-#
+# docker_fixed_cidr_v6: fd00:4002::/64
+# 
 # # Used only for Debian/Ubuntu. Switch 'stable' to 'edge' if needed.
 # docker_apt_release_channel: stable
 # docker_apt_repository: "deb https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
@@ -311,13 +390,15 @@ install_rook: false
 # kubernetes_addons_cni: calico
 #
 # Configure calico_ip_autodetect method if host has more than one interface
-# default: can-reach=8.8.8.8, i.e. interface used by default route 
+# default: can-reach=8.8.8.8, i.e. interface used by default route
 # select interface that can reach specific destination, e.g:
-# calico_ip_autodetect: can-reach=8.8.8.8
+# calico_ip_autodetect: interface={{ kubernetes_system_interface }}
 # select interface matching regular expression, e.g.:
 # calico_ip_autodetect: interface=eth.*
 # select interface not matching regular expression, e.g.:
 # calico_ip_autodetect: skip-interface=eth.*
+# Configure ipv6 autodetect method
+# calico_ipv6_autodetect: interface={{ kubernetes_system_interface }}
 #
 # calico_repo: svl-artifactory.juniper.net/northstar-docker-local/
 # 
@@ -424,15 +505,23 @@ install_rook: false
 # opendistro_es_fullname: opendistro
 # opendistro_es_cluster_name: Paragon_Cluster
 # opendistro_es_image: svl-artifactory.juniper.net/northstar-docker-local/amazon/opendistro-for-elasticsearch
+# opendistro_es_version: 1.13.3
 # opendistro_es_kibana_image: svl-artifactory.juniper.net/northstar-docker-local/amazon/opendistro-for-elasticsearch-kibana
-# opendistro_es_version: 1.13.2
+# opendistro_es_kibana_version: 1.13.2
 # opendistro_es_init_image: svl-artifactory.juniper.net/northstar-docker-local/busybox
 # opendistro_es_init_image_version: 1.27.2
 # opendistro_es_data_replicas: 3
 # opendistro_es_admin_user: admin
+# If the admin_password is not set, a random one will be generated
+# and stored in the {{opendistro_es_fullname}}-es-account secret
 # opendistro_es_admin_password: ""
 # opendistro_es_retain: 7d
+#opendistro_es_retain_size: 10g
+# opendistro_es_watermark_low: "70%"
+# opendistro_es_watermark_high: "75%"
+# opendistro_es_watermark_flood_stage: "75%"
 # opendistro_es_cleanup_index_pattern: ["logstash-*"]
+# upload_past_log_to_es: "true"
 # 
 # addons/logstash
 # logstash_release_name: logstash
@@ -452,7 +541,7 @@ install_rook: false
 # rabbitmq_password: ""
 # rabbitmq_port: 5672
 # rabbitmq_replicas: >
-#   {%if (groups.node|count) + (groups.master|count if groups.node|count == 0 or allow_master_scheduling else 0) >= 2 %}3{% else %}1{% endif %}
+#   {%if worker_nodes|int > 2 %}3{% else %}1{% endif %}
 # 
 # addons/redis
 # redis_release: redis
@@ -471,6 +560,8 @@ install_rook: false
 # docker_registry_repo: svl-artifactory.juniper.net/northstar-docker-local/
 # docker_registry_version: 2.6.2
 # docker_registry_storage_size: 25Gi
+# docker_registry_replicas: >-
+#   {%if worker_nodes|int > 2 %}2{% else %}1{% endif %}
 #
 # docker_hostpath: "/export/registry"
 # registry_nodes:
@@ -490,11 +581,8 @@ install_rook: false
 # northstar_tls_secret_name: northstar-tls-client
 # northstar_tls_ca_cert_name: client.pem
 # northstar_kube_master: "{{ groups.master[0] }}"
-# northstar_s3bucket: '{% if not install_rook %}northstar{% endif %}'
-# northstar_s3_cache_time: 2s
-# northstar_s3_endpoint: '{% if not install_rook %}http://minio.{{ minio_namespace }}:9000{% endif %}'
-# northstar_crpd_s3_endpoint: '{{ northstar_s3_endpoint }}'
-# northstar_s3_secret: '{% if not install_rook %}minio{% endif %}'
+# 
+# northstar_namespace: northstar
 # 
 # TopoServer
 # toposerver bmp client port
@@ -510,8 +598,12 @@ install_rook: false
 # bmp_service: bmp-grpc
 # 
 # northstar/pcserver
+# northstar_pceserver_proxy defines ingress controller for proxying pcep:
+# northstar_pceserver_proxy: nginx -- nginx-ingress in common namespace
+# northstar_pceserver_proxy: haproxy -- pcep-proxy in northstar namespace
 # ServiceTypes: LoadBalancer -- requires external load balancer
-#               ClusterIP -- requires pcep-proxy (experimental)
+#               ClusterIP -- requires nginx-ingress or
+#                                     pcep-proxy (experimental)
 # northstar_pceserver_service_type: LoadBalancer
 # northstar_pceserver_external_traffic_policy: Local
 # northstar_pceserver_nodeport: 31189
@@ -590,7 +682,7 @@ install_rook: false
 # northstar_srt_enable: false
 # 
 # Number of celery worker instances
-# northstar_celeryworkers: 2
+# northstar_celeryworkers: "{% if worker_nodes|int > 2 %}2{% else %}1{% endif %}"
 # 
 # addons/bmp
 # bmp_bmp_port: 10001
@@ -668,7 +760,7 @@ install_rook: false
 # ems_log_level: warning
 # Override log level for specific components
 # doa_log_level:
-# devicemodel_log_level: 
+# devicemodel_log_level:
 # devicemodel_connector_log_level:
 # dcs_log_level:
 # auditlog_log_level:
@@ -693,6 +785,15 @@ install_rook: false
 # dmonproxy_db_drop:
 # iam_db_drop:
 # jobmanager_db_drop:
+# 
+# storage_config:
+#   src_namespace: '{{ rook_namespace }}'
+#   src_secret: 'rook-ceph-object-user-object-store-ems-user'
+#   url_host: 'https://rook-ceph-rgw-object-store.{{ rook_namespace }}:80'
+#   url_redirect_path: '/rookstore'
+#   secret_key: SecretKey
+#   access_key: AccessKey
+#   endpoint: 'http://rook-ceph-rgw-object-store.{{ rook_namespace }}:80'
 # 
 # EMS Devicemodel
 # install_ems_devicemodel: '{{ install_ems }}'
@@ -768,7 +869,7 @@ install_rook: false
 # postgres_crd: postgresqls.acid.zalan.do
 # postgres_cluster_name: atom
 # postgres_cluster_instances: >
-#   {%if (groups.node|count) + (groups.master|count if groups.node|count == 0 or allow_master_scheduling else 0) >= 2 %}3{% else %}1{% endif %}
+#   {%if worker_nodes|int > 2 %}3{% else %}1{% endif %}
 # postgres_cluster_volume_size: 5Gi
 # postgres_db_names:
 #   - atom
@@ -779,6 +880,9 @@ install_rook: false
 # postgres_spilo_image: svl-artifactory.juniper.net/northstar-docker-local/zalando/spilo-13:2.0-p6
 # postgres_backup_image: svl-artifactory.juniper.net/northstar-docker-local/zalando/logical-backup:v1.6.0
 # postgres_pooler_image: svl-artifactory.juniper.net/northstar-docker-local/zalando/pgbouncer:master-7
+# optionally define storage class for postgress PVC.
+# Use default storage class if not defined.
+# postgres_cluster_volume_storage_class:
 # 
 # Discovered number of target nodes
 # postgres_available_target_nodes: "{{ groups['cluster']|length }}"
@@ -799,10 +903,17 @@ install_rook: false
 #     memory: 100Mi
 # 
 # Maximum number of connections
+# (deprecated, use postgres_parameters instead)
 # postgres_max_connections: "200"
 # 
 # Queries exceeding this duration in ms will be logged
+# (deprecated, use postgres_parameters instead)
 # postgres_log_min_duration_statement: "5000"
+# 
+# Dictionary of Postgres parameter names and values
+# postgres_parameters:
+#   log_min_duration_statement: "5000"
+#   max_connections: "200"
 # 
 # user/pass used by northstar clients to access postgres
 # postgres_northstar_credentials: northstar.{{ postgres_cluster_name }}-db.credentials
@@ -822,8 +933,9 @@ install_rook: false
 # ambassador_instance: ambassador
 # ambassador_secret: ambassador
 # ambassador_repo: svl-artifactory.juniper.net/northstar-docker-local/datawire/ambassador
+# ambassador_tag: 1.14.2-1
 # ambassador_replicas: >
-#   {%if (groups.node|count) + (groups.master|count if groups.node|count == 0 or allow_master_scheduling else 0) >= 2 %}3{% else %}1{% endif %}
+#   {%if worker_nodes|int > 2 %}3{% else %}1{% endif %}
 # ambassador_resources:
 #   limits:
 #     cpu: 2000m
@@ -838,12 +950,15 @@ install_rook: false
 # Kafka configuraiton
 # kafka_namespace: '{{ atom_namespace }}'
 # kafka_brokers: >
-#   {%if (groups.node|count) + (groups.master|count if groups.node|count == 0 or allow_master_scheduling else 0) >= 2 %}3{% else %}1{% endif %}
+#   {%if worker_nodes|int > 2 %}3{% else %}1{% endif %}
+# kafka_storage_class: local-storage
 # 
 # Zookeeper configuration
 # zookeeper_namespace: '{{ atom_namespace }}'
 # zookeeper_replicas: >
-#   {%if (groups.node|count) + (groups.master|count if groups.node|count == 0 or allow_master_scheduling else 0) >= 2 %}3{% else %}1{% endif %}
+#   {%if worker_nodes|int > 2 %}3{% else %}1{% endif %}
+# 
+# zookeeper_storage_class: local-storage
 # 
 # Cert-manager configuration
 # cert_manager_namespace: '{{ atom_namespace }}'
@@ -866,20 +981,21 @@ install_rook: false
 # IAM configuration
 # iam_namespace: '{{ atom_namespace }}'
 # iam_portal_url: https://{{ northstar_web_hostname }}
-# iam_app_name: Paragon
+# iam_app_name: "Paragon Automation"
 # iam_support_email_id: paragon-hackers@juniper.net
 # iam_default_user: admin
-# iam_skip_mail_verification: false
+iam_skip_mail_verification: true
 # 
 # ETCD configuratin
 # install_etcd: false ## "{{ install_ems }}"
 # etcd_namespace: '{{ atom_namespace }}'
 # etcd_replicas: >
-#   {%if (groups.node|count) + (groups.master|count if groups.node|count == 0 or allow_master_scheduling else 0) >= 2 %}3{% else %}1{% endif %}
+#   {%if worker_nodes|int > 2 %}3{% else %}1{% endif %}
 # 
 # HB configuration
 # hb_db_rest_service_name: influxdb.{{ healthbot_namespace }}
 # hb_db_rest_service_port: 8086
+# hb_tenant_token : hb-default
 # 
 # Fault configuration
 # fault_namespace: fault
@@ -901,7 +1017,67 @@ install_rook: false
 # argo_controller_image: workflow-controller
 # argo_server_image: argocli
 # argo_executor_image: argoexec
-# argo_tag: v2.12.5
+# argo_tag: v2.12.11
 # 
 # Foghorn configuration
 # foghorn_namespace: "foghorn"
+# 
+# Excluded Services for HB
+# excluded_services: ''
+# 
+# Paragon UI configurations
+# paragon_ui_namespace: paragonui
+# 
+# Disable systemd-udevd. udevd can interfere with rook/ceph creating OSD
+# if udevd is disabled, dynamic device changes of the node will not be automatically
+# processed, e.g. loading CD-ROM, hotplug disk, switch WiFi network.
+# system-udevd is temporarily disabled during installation. set "disable_udevd: yes"
+# to make that change permanent
+# disable_udevd: no
+# 
+# User defined registry
+# user_registry_name: ''
+# username for authentication with user_registry
+# user_registry_user: ''
+# password for authentication with user_registry
+# user_registry_password: ''
+# user_registry_token: ''
+# no login for user_register required
+# user_registry_nologin: false
+# do not validate TLS
+# user_registry_notls: false
+# 
+# flag if images should be automatically pushed to user_registry
+# If set to false, use `./run -c <config-dir> setup_docker_images <opts> user-registry`
+# user_registry_push: true
+# 
+# metadata_namespace: "common"
+# 
+# Handle etcd backup for single-master installs
+# etcd_backup_path: /export/backup
+# crontab for creating etcd backup (define as '' to disable)
+# etcd_backup_schedule: "*/5 * * * *"
+# 
+# base path for paragon commands
+# paragon_command_path: /usr/local/bin
+# base path for cache directory
+# paragon_command_cache: /var/cache/jnpr
+# 
+# 
+# prepare config for rabbitmq federation
+# prepare_multi_cluster: false
+# 
+# pathfinder multi tenant
+# northstar_multi_tenant: false
+# northstar_multi_tenant_namespace: northstar
+# northstar_multi_tenant_topo_id: 42
+# northstar_multi_tenant_org_id: "aa-bb-cc-dd"
+# 
+# 
+# use_external_pgsql: false
+# postgres_db_host: ''
+# postgres_db_port: 5432
+# postgres_user_username: ''
+# postgres_user_password: ''
+# postgres_admin_username: ''
+# postgres_admin_password: ''

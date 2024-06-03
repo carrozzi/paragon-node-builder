@@ -1,0 +1,81 @@
+{
+  "variables": {
+    "iso_url": "iso/rhel-8.4-x86_64-dvd.iso",
+    "iso_sha256": "48f955712454c32718dcde858dea5aca574376a1d7a4b0ed6908ac0b85597811"
+
+  },
+  "builders": [
+    {
+      "name": "pa-rhel8-node-23.1",
+      "vm_name": "pa-rhel8-node-23.1",
+      "type": "vsphere-iso",
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks-r8-2disk.cfg<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "storage": [
+        {
+          "disk_size": 350000,
+          "disk_thin_provisioned": true
+        },
+        {
+          "disk_size": 50000,
+          "disk_thin_provisioned": true
+        }
+      ],
+      "guest_os_type": "rhel7_64guest",
+      "vm_version": 13,
+      "datastore": "{{ user `vcenter_datastore`}}",
+      "insecure_connection": true,
+      "http_ip": "10.192.16.64", 
+      "ip_wait_address": "10.192.16.0/23",
+      "network_adapters": [
+        {
+	  "network": "VM Network",
+          "network_card": "vmxnet3"
+        }
+      ],
+      "http_directory": "http",
+      "RAM": 65536,
+      "CPUs": 16,
+      "RAM_reserve_all": true,
+      "vcenter_server": "{{ user `vcenter_ip`}}",
+      "username": "{{ user `vcenter_username`}}",
+      "password": "{{ user `vcenter_passwd`}}",
+      "host": "{{ user `esxi_ip`}}", 
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_sha256`}}",
+      "ssh_username": "root",
+      "ssh_password": "Paragon1",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "ssh_read_write_timeout": "10000s",
+      "export": {
+        "force": true,
+        "output_directory": "./output_rhel8_23.2"
+      },
+      "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; sudo -S sh '/tmp/shutdown.sh'",
+      "shutdown_timeout": "10m"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "./files/",
+      "timeout": "1h",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "timeout": "2h",
+      "execute_command": "sudo -S sh '{{.Path}}'",
+      "expect_disconnect": true,
+      "scripts": [
+            "scripts/23.1airgap.sh",
+	    "scripts/zerodisk.sh"
+          ]
+
+    }
+  ]
+}
+
