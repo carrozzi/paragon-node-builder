@@ -2,6 +2,8 @@
   "vcenter_ip": "X.X.X.X",
   "vcenter_username": "USERNAME",
   "vcenter_passwd":"PASSWORD",
+  "rhel_user": "USERNAME",
+  "rhel_passwd":"PASSWORD",
   "vcenter_datastore":"datastore1",
   "esxi_ip": "X.X.X.X"
 }

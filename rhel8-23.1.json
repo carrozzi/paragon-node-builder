@@ -54,7 +54,7 @@
         "force": true,
         "output_directory": "./output_rhel8_23.2"
       },
-      "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; sudo -S sh '/tmp/shutdown.sh'",
+      "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; sudo bash '/tmp/shutdown.sh'",
       "shutdown_timeout": "10m"
     }
   ],
@@ -68,7 +68,7 @@
     {
       "type": "shell",
       "timeout": "2h",
-      "execute_command": "sudo -S sh '{{.Path}}'",
+      "execute_command": "sudo bash '{{.Path}}'",
       "expect_disconnect": true,
       "scripts": [
             "scripts/23.1airgap.sh",

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -x
-subscription-manager register --username=USERNAME --password=PASSWORD --auto-attach
+subscription-manager register --username=$RHEL_USER --password=$RHEL_PASSWD --auto-attach
 echo "vm.max_map_count=262144" >> /etc/sysctl.conf
 echo "fs.file-max = 2097152" >> /etc/sysctl.conf
 echo "fs.inotify.max_user_watches=524288" >> /etc/sysctl.conf
