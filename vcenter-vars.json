@@ -1,0 +1,7 @@
+{
+  "vcenter_ip": "X.X.X.X",
+  "vcenter_username": "USERNAME",
+  "vcenter_passwd":"PASSWORD",
+  "vcenter_datastore":"datastore1",
+  "esxi_ip": "X.X.X.X"
+}
