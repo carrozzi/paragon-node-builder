@@ -1,0 +1,60 @@
+{
+  "variables": {
+    "iso_url": "iso/rhel-8.4-x86_64-dvd.iso",
+    "iso_sha256": "48f955712454c32718dcde858dea5aca574376a1d7a4b0ed6908ac0b85597811"
+
+  },
+  "builders": [
+    {
+      "name": "pa-node-rhel8-24.1-qemu",
+      "vm_name": "pa-node-rhel8-24.1.qcow2",
+      "headless": true,
+      "type": "qemu",
+      "accelerator": "kvm",
+      "vnc_bind_address": "0.0.0.0",
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ks-r8-2disk.cfg<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": "300G",
+      "disk_additional_size": "50G",
+      "format": "qcow2",
+      "disk_compression": true,
+      "http_directory": "http",
+      "memory": 32768,
+      "cpus": 8,
+      "iso_url": "{{user `iso_url`}}",
+      "iso_checksum": "{{user `iso_sha256`}}",
+      "ssh_username": "root",
+      "ssh_password": "Paragon1",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "10000s",
+      "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; sudo -S sh '/tmp/shutdown.sh'",
+      "shutdown_timeout": "10m"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "./files/",
+      "timeout": "1h",
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "timeout": "2h",
+      "environment_vars": [
+              "RHEL_USER={{ user `rhel_user`}}",
+              "RHEL_PASSWD={{ user `rhel_passwd`}}"
+      ],
+
+      "execute_command": "sudo env {{ .Vars}} {{.Path}}",
+      "scripts": [
+            "scripts/24.1airgap.sh",
+            "scripts/zerodisk.sh"
+
+          ]
+    }
+  ]
+}
+
