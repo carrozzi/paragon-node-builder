@@ -19,10 +19,10 @@ yum install -y yum-utils device-mapper-persistent-data lvm2 python3 nmap-ncat
 yum -y install wireshark-cli jq python3-pyyaml
 #yum -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 yum -y install bash-completion gdisk iptables openssl rsync python-six python3-pip network-scripts fio pytz 
-rpm -Uvh python3-markupsafe-0.23-19.el8.x86_64.rpm
-rpm -Uvh python3-pytz-2017.2-11.el8.noarch.rpm
-rpm -Uvh python3-babel-2.5.1-7.el8.noarch.rpm
-rpm -Uvh python3-jinja2-2.10.1-3.el8.noarch.rpm
+#rpm -Uvh python3-markupsafe-0.23-19.el8.x86_64.rpm
+#rpm -Uvh python3-pytz-2017.2-11.el8.noarch.rpm
+#rpm -Uvh python3-babel-2.5.1-7.el8.noarch.rpm
+#rpm -Uvh python3-jinja2-2.10.1-3.el8.noarch.rpm
 #yum -y install iptables-services
 #systemctl enable iptables
 #systemctl start iptables
