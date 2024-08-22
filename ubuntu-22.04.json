@@ -1,0 +1,112 @@
+{
+  "builders": [
+    {
+      "vm_name": "ubuntu-paragon-node",
+      "type": "vsphere-iso",
+
+
+      "iso_url": "https://releases.ubuntu.com/jammy/ubuntu-22.04.4-live-server-amd64.iso",
+      "iso_checksum": "45f873de9f8cb637345d6e66a583762730bbea30277ef7b32c9c3bd6700a32b2",
+      "ssh_username": "paragon",
+      "ssh_password": "Paragon1",
+      "ssh_timeout": "30m",
+      "ssh_wait_timeout": "10000s",
+      "ssh_read_write_timeout": "10000s",
+      "ssh_handshake_attempts": "100",
+      "CPUs": 8,
+      "RAM": 32768,
+      "guest_os_type": "ubuntu64Guest",
+      "http_ip": "10.192.16.64",
+      "ip_wait_address": "10.192.16.0/23",
+      "ip_settle_timeout": "15m",
+      "storage": [
+        {
+          "disk_size": 300000,
+          "disk_thin_provisioned": true
+        },
+        {
+          "disk_size": 50000,
+          "disk_thin_provisioned": true
+        }
+      ],
+      "vm_version": 13,
+      "datastore": "{{ user `vcenter_datastore`}}",
+      "insecure_connection": true,
+      "network_adapters": [
+        {
+          "network": "VM Network",
+          "network_card": "vmxnet3"
+        }
+      ],
+      "RAM_reserve_all": true,
+      "vcenter_server": "{{ user `vcenter_ip`}}",
+      "username": "{{ user `vcenter_username`}}",
+      "password": "{{ user `vcenter_passwd`}}",
+      "host": "{{ user `esxi_ip`}}",
+      "http_directory": "http",
+      "export": {
+        "force": true,
+        "output_directory": "./output_ubuntu-22.04"
+      },
+      "boot_wait": "10s",
+      "boot_command": [
+        "<spacebar><wait><spacebar><wait><spacebar><wait><spacebar><wait><spacebar><wait>",
+        "e<wait>",
+        "<down><down><down><end>",
+        " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+        "<f10>"
+      ],
+      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'Paragon1'|sudo -S sh '/tmp/shutdown.sh'",
+      "shutdown_timeout": "10m"
+    },
+    {
+      "vm_name": "ubuntu-paragon-node.qcow2",
+      "headless": true,
+      "type": "qemu",
+      "accelerator": "kvm",
+      "vnc_bind_address": "0.0.0.0",
+      "boot_command": [
+        "<spacebar><wait><spacebar><wait><spacebar><wait><spacebar><wait><spacebar><wait>",
+        "e<wait>",
+        "<down><down><down><end>",
+        " autoinstall ds=nocloud-net\\;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/",
+        "<f10>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": "300G",
+      "disk_interface": "virtio-scsi",
+      "disk_additional_size": "50G",
+      "format": "qcow2",
+      "disk_compression": true,
+      "http_directory": "http",
+      "memory": 32768,
+      "cpus": 8,
+      "iso_url": "https://releases.ubuntu.com/jammy/ubuntu-22.04.4-live-server-amd64.iso",
+      "iso_checksum": "45f873de9f8cb637345d6e66a583762730bbea30277ef7b32c9c3bd6700a32b2",
+      "ssh_username": "paragon",
+      "ssh_password": "Paragon1",
+      "ssh_port": 22,
+      "ssh_timeout": "30m",
+      "ssh_wait_timeout": "10000s",
+      "shutdown_command": "echo 'shutdown -P now' > /tmp/shutdown.sh; echo 'Paragon1'|sudo -S sh '/tmp/shutdown.sh'",
+      "shutdown_timeout": "10m"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "sources": [
+        "files/"
+      ],
+      "destination": "/tmp"
+    },
+    {
+      "type": "shell",
+      "scripts": [
+        "scripts/ubuntu.sh",
+        "scripts/zerodisk.sh"
+      ],
+      "execute_command": "sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
+    }
+  ]
+}

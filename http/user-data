@@ -1,0 +1,20 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US
+  keyboard:
+    layout: us
+  storage:
+    layout:
+      name: direct
+  identity:
+    hostname: paragon-node
+    username: paragon
+    password: $6$ZQK0kMTJ83iuuv4Z$Q2aIh9IZIczrNa2Uf1bYn9gSBEz2WcEtaVa0VQP8Blla3u74BkYKsah8qnuPsU4bTyIc4MyOEmWPJZj0uS0Ak0
+  ssh:
+    install-server: true
+    allow-pw: true
+  user-data:
+    disable_root: false
+  late-commands:
+    - echo 'paragon ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/paragon
