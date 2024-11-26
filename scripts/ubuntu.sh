@@ -6,6 +6,8 @@ export DEBIAN_FRONTEND=noninteractive
 # Get username
 username=`logname`
 echo "AllowTcpForwarding yes" >> /etc/ssh/sshd_config
+apt update
+apt upgrade -y
 apt install -y python3
 apt install -y apt-transport-https bash-completion gdisk iptables lvm2 openssl
 apt install -y ca-certificates curl docker.io jq keepalived 

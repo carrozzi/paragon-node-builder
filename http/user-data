@@ -16,5 +16,3 @@ autoinstall:
     allow-pw: true
   user-data:
     disable_root: false
-  late-commands:
-    - echo 'paragon ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/paragon

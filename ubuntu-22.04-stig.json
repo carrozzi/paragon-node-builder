@@ -107,7 +107,7 @@
         "scripts/ubuntu_stig.sh",
         "scripts/zerodisk.sh"
       ],
-      "execute_command": "sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
+      "execute_command": "echo 'Paragon1'|sudo -S sh -c '{{ .Vars }} {{ .Path }}'"
     }
   ]
 }
